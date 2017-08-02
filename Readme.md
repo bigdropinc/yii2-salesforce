@@ -10,7 +10,7 @@ Installation
 Run
 
 ```
-composer require --prefer-dist sokyrko/yii2-salesforce
+composer require --prefer-dist bigdropinc/yii2-salesforce
 ```
 
 How to use
