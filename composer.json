@@ -1,5 +1,5 @@
 {
-  "name": "sokyrko/yii2-salesforce",
+  "name": "bigdropinc/yii2-salesforce",
   "type": "yii2-extension",
   "description": "Salesforce integration for Yii2 framework",
   "keywords": [
