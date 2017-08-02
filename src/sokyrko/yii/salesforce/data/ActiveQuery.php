@@ -10,6 +10,7 @@ namespace sokyrko\yii\salesforce\data;
 
 use Akeneo\SalesForce\Connector\SalesForceClient;
 use Akeneo\SalesForce\Query\QueryBuilder;
+use sokyrko\yii\salesforce\components\SalesforceComponent;
 use yii\base\InvalidCallException;
 use yii\base\InvalidParamException;
 use yii\db\ActiveQueryInterface;
@@ -33,6 +34,9 @@ class ActiveQuery implements ActiveQueryInterface
     /** @var boolean */
     protected $enableEmulateExecution;
 
+    /** @var boolean */
+    protected $asArray = false;
+
     protected $queryParts = [
         'select'  => [],
         'from'    => '',
@@ -40,8 +44,6 @@ class ActiveQuery implements ActiveQueryInterface
         'orderBy' => [],
         'limit'   => '',
     ];
-
-    // TODO: refactor query builder to works if andWhere called without first where
 
     /**
      * Constructor.
@@ -92,7 +94,7 @@ class ActiveQuery implements ActiveQueryInterface
      */
     public function asArray($value = true)
     {
-        throw new InvalidCallException('Not implemented yet.'); // TODO
+        $this->asArray = $value;
     }
 
     /**
@@ -100,12 +102,16 @@ class ActiveQuery implements ActiveQueryInterface
      *
      * @param Connection $db the DB connection used to create the DB command.
      * If `null`, the DB connection returned by [[ActiveQueryTrait::$modelClass|modelClass]] will be used.
-     * @return ActiveRecordInterface|array|null a single row of query result. Depending on the setting of [[asArray]],
+     * @return ActiveRecord|array|null a single row of query result. Depending on the setting of [[asArray]],
      * the query result may be either an array or an ActiveRecord object. `null` will be returned
      * if the query results in nothing.
      */
     public function one($db = null)
     {
+        if ($this->enableEmulateExecution) {
+            return null;
+        }
+
         $all = $this->all();
 
         return reset($all); // todo: refactor
@@ -185,8 +191,8 @@ class ActiveQuery implements ActiveQueryInterface
      * Finds the related records for the specified primary record.
      * This method is invoked when a relation of an ActiveRecord is being accessed in a lazy fashion.
      *
-     * @param string                $name the relation name
-     * @param ActiveRecordInterface $model the primary model
+     * @param string                             $name the relation name
+     * @param ActiveRecordInterface|ActiveRecord $model the primary model
      * @return mixed the related record(s)
      */
     public function findFor($name, $model)
@@ -199,16 +205,23 @@ class ActiveQuery implements ActiveQueryInterface
      *
      * @param Connection $db the database connection used to execute the query.
      * If this parameter is not given, the `salesforce` application component will be used.
-     * @return array the query results. If the query results in nothing, an empty array will be returned.
+     * @return array|ActiveRecord[] the query results. If the query results in nothing, an empty array will be returned.
      */
     public function all($db = null)
     {
-        /** @var SalesForceClient $client */
-        $client = \Yii::$app->get('salesforce')->getClient();
+        if ($this->enableEmulateExecution) {
+            return [];
+        }
+
+        $client = $this->getDb($db)->getClient();
+
+        if ($this->asArray) {
+            return $client->search($this->getRawQuery());
+        }
 
         return array_map(function ($item) {
             return new $this->modelClass($item);
-        }, $client->search($this->getRawQuery())); // TODO: create query and then search
+        }, $client->search($this->getRawQuery()));
     }
 
     /**
@@ -233,6 +246,8 @@ class ActiveQuery implements ActiveQueryInterface
         if ($this->queryParts['orderBy']) {
             $q->orderBy($this->parseOrderBy($this->queryParts['orderBy']));
         }
+
+        // TODO: support limit and join
 
         return $q->getQuery();
     }
@@ -268,12 +283,24 @@ class ActiveQuery implements ActiveQueryInterface
      *
      * @param string     $q the COUNT expression. Defaults to '*'.
      * @param Connection $db the database connection used to execute the query.
-     * If this parameter is not given, the `db` application component will be used.
+     * If this parameter is not given, the `salesforce` application component will be used.
      * @return int number of records.
      */
-    public function count($q = '*', $db = null)
+    public function count($q = 'Id', $db = null)
     {
-        throw new InvalidCallException('Not implemented yet.'); // TODO
+        $client = $this->getDb($db)->getClient();
+        $this->select(sprintf('COUNT(%s)', $q));
+
+        return $client->search($this->getRawQuery())[0]['expr0'] ?? 0;
+    }
+
+    /**
+     * @param null $db
+     * @return null|object|SalesforceComponent
+     */
+    protected function getDb($db = null)
+    {
+        return $db ?? \Yii::$app->get('salesforce');
     }
 
     /**

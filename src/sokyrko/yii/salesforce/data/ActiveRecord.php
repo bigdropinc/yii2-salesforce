@@ -9,7 +9,9 @@
 namespace sokyrko\yii\salesforce\data;
 
 use yii\base\InvalidCallException;
+use yii\base\InvalidParamException;
 use yii\base\Model;
+use yii\base\UnknownMethodException;
 use yii\db\ActiveQueryInterface;
 use yii\db\ActiveRecordInterface;
 
@@ -25,6 +27,9 @@ class ActiveRecord extends Model implements ActiveRecordInterface
 
     /** @var boolean */
     protected static $isCustom = true;
+
+    /** @var null|array|ActiveRecord[] */
+    protected $relations;
 
     /**
      * @return string
@@ -443,7 +448,7 @@ class ActiveRecord extends Model implements ActiveRecordInterface
      */
     public function getIsNewRecord()
     {
-        // TODO: Implement getIsNewRecord() method.
+        return $this->isNewRecord;
     }
 
     /**
@@ -474,7 +479,39 @@ class ActiveRecord extends Model implements ActiveRecordInterface
      */
     public function getRelation($name, $throwException = true)
     {
-        // TODO: Implement getRelation() method.
+        $getter = 'get' . $name;
+        try {
+            // the relation could be defined in a behavior
+            $relation = $this->$getter();
+        } catch (UnknownMethodException $e) {
+            if ($throwException) {
+                throw new InvalidParamException(get_class($this) . ' has no relation named "' . $name . '".', 0, $e);
+            } else {
+                return null;
+            }
+        }
+        if (!$relation instanceof ActiveQueryInterface) {
+            if ($throwException) {
+                throw new InvalidParamException(get_class($this) . ' has no relation named "' . $name . '".');
+            } else {
+                return null;
+            }
+        }
+
+        if (method_exists($this, $getter)) {
+            // relation name is case sensitive, trying to validate it when the relation is defined within this class
+            $method = new \ReflectionMethod($this, $getter);
+            $realName = lcfirst(substr($method->getName(), 3));
+            if ($realName !== $name) {
+                if ($throwException) {
+                    throw new InvalidParamException('Relation names are case sensitive. ' . get_class($this) . " has a relation named \"$realName\" instead of \"$name\".");
+                } else {
+                    return null;
+                }
+            }
+        }
+
+        return $relation;
     }
 
     /**
@@ -487,7 +524,7 @@ class ActiveRecord extends Model implements ActiveRecordInterface
      */
     public function populateRelation($name, $records)
     {
-        // TODO: Implement populateRelation() method.
+        $this->relations[ $name ] = $records;
     }
 
     /**
