@@ -1,0 +1,37 @@
+{
+  "name": "sokyrko/yii2-salesforce",
+  "type": "yii2-extension",
+  "description": "Salesforce integration for Yii2 framework",
+  "keywords": [
+    "yii2",
+    "salesforce",
+    "activerecord",
+    "rest"
+  ],
+  "license": "BSD-3-Clause",
+  "support": {
+    "issues": "https://github.com/sokyrko/yii2-salesforce/issues",
+    "source": "https://github.com/sokyrko/yii2-salesforce"
+  },
+  "authors": [
+    {
+      "name": "Andrew Sokirko",
+      "email": "wartwvister@gmail.com"
+    }
+  ],
+  "require": {
+    "php": ">=7.0.0",
+    "yiisoft/yii2": "~2.0.0",
+    "akeneo-salesforce/salesforce-api": "^2.0"
+  },
+  "require-dev": {
+    "codeception/base": "^2.2.3",
+    "codeception/verify": "~0.3.1",
+    "codeception/specify": "~0.4.6"
+  },
+  "autoload": {
+    "psr-4": {
+      "sokyrko\\yii\\salesforce\\": "src/sokyrko/yii/salesforce/"
+    }
+  }
+}
