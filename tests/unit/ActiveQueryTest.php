@@ -71,4 +71,20 @@ class ActiveQueryTest extends Unit
             Airport::find()->where(['Name' => 'Test'])->orderBy(['Id' => SORT_ASC])->getRawQuery()
         );
     }
+
+    public function testLimit()
+    {
+        Assert::assertEquals(
+            'SELECT Id, Name FROM Airport__c LIMIT 100',
+            Airport::find()->limit(100)->getRawQuery()
+        );
+    }
+
+    public function testOffset()
+    {
+        Assert::assertEquals(
+            'SELECT Id, Name FROM Airport__c OFFSET 100',
+            Airport::find()->offset(100)->getRawQuery()
+        );
+    }
 }

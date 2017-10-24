@@ -8,8 +8,6 @@
 
 namespace sokyrko\yii\salesforce\data;
 
-use Akeneo\SalesForce\Connector\SalesForceClient;
-use Akeneo\SalesForce\Query\QueryBuilder;
 use sokyrko\yii\salesforce\components\SalesforceComponent;
 use yii\base\InvalidCallException;
 use yii\base\InvalidParamException;
@@ -43,6 +41,7 @@ class ActiveQuery implements ActiveQueryInterface
         'where'   => [],
         'orderBy' => [],
         'limit'   => '',
+        'offset'  => '',
     ];
 
     /**
@@ -95,6 +94,8 @@ class ActiveQuery implements ActiveQueryInterface
     public function asArray($value = true)
     {
         $this->asArray = $value;
+
+        return $this;
     }
 
     /**
@@ -247,7 +248,15 @@ class ActiveQuery implements ActiveQueryInterface
             $q->orderBy($this->parseOrderBy($this->queryParts['orderBy']));
         }
 
-        // TODO: support limit and join
+        if ($this->queryParts['limit']) {
+            $q->limit($this->queryParts['limit']);
+        }
+
+        if ($this->queryParts['offset']) {
+            $q->offset($this->queryParts['offset']);
+        }
+
+        // TODO: support join
 
         return $q->getQuery();
     }
@@ -527,7 +536,7 @@ class ActiveQuery implements ActiveQueryInterface
      */
     public function limit($limit)
     {
-        $this->queryParts['limit'][] = $limit;
+        $this->queryParts['limit'] = $limit;
 
         return $this;
     }
@@ -540,7 +549,9 @@ class ActiveQuery implements ActiveQueryInterface
      */
     public function offset($offset)
     {
-        throw new InvalidCallException('Not implemented yet.');
+        $this->queryParts['offset'] = $offset;
+
+        return $this;
     }
 
     /**
